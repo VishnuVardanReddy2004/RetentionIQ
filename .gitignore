@@ -8,3 +8,10 @@ __pycache__/
 data/retentioniq.db
 data/retentioniq_backup.db
 data/exports/
+
+
+# Local editor and operating system files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

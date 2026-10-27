@@ -1,10 +1,10 @@
-
 .venv/
 __pycache__/
 .pytest_cache/
 *.py[cod]
 .env
 
-# Generated database and exports
+# Generated database files and exports
 data/retentioniq.db
+data/retentioniq_backup.db
 data/exports/

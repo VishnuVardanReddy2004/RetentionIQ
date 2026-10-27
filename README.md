@@ -177,3 +177,11 @@ The data generator uses a fixed random seed. Reproducibility should be verified 
 Vishnu Vardan Reddy
 
 GitHub: https://github.com/VishnuVardanReddy2004
+
+## Verification Results
+
+The current development dataset passed 18 database validation checks and 18 automated pytest tests.
+
+Reproducibility was verified by generating the dataset twice with the same random seed (`20261022`) and comparing database-content SHA-256 checksums. Both runs produced the same checksum.
+
+These results apply to the current synthetic dataset and implemented test suite.

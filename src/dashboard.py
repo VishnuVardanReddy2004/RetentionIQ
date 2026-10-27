@@ -411,7 +411,7 @@ if selected_offer != "All":
 
 if st.sidebar.button(
     "Reset Dashboard Cache",
-    use_container_width=True,
+    width="stretch",
 ):
     st.cache_data.clear()
     st.rerun()
@@ -546,7 +546,7 @@ with left:
 
         st.plotly_chart(
             fig,
-            use_container_width=True,
+            width="stretch",
         )
 
     else:
@@ -590,7 +590,7 @@ with right:
 
         st.plotly_chart(
             fig,
-            use_container_width=True,
+            width="stretch",
         )
 
         st.caption(
@@ -677,7 +677,7 @@ if not experiment_summary.empty:
     with chart_col:
         st.plotly_chart(
             fig,
-            use_container_width=True,
+            width="stretch",
         )
 
     with summary_col:
@@ -755,7 +755,7 @@ if not experiment_summary.empty:
 
     st.dataframe(
         display_experiment,
-        use_container_width=True,
+        width="stretch",
         hide_index=True,
     )
 
@@ -834,7 +834,7 @@ if not offer_summary.empty:
 
     st.dataframe(
         offer_display,
-        use_container_width=True,
+        width="stretch",
         hide_index=True,
     )
 
@@ -974,7 +974,7 @@ if not filtered_contacts.empty:
 
     st.dataframe(
         display_contacts,
-        use_container_width=True,
+        width="stretch",
         hide_index=True,
         height=360,
     )
@@ -997,7 +997,7 @@ st.download_button(
     data=download_data,
     file_name="retentioniq_campaign_contacts.csv",
     mime="text/csv",
-    use_container_width=False,
+    width="content",
 )
 
 
@@ -1011,3 +1011,7 @@ st.caption(
     "Fixed seed: 20261022. "
     "Treatment effects and revenue estimates are simulated."
 )
+
+
+
+

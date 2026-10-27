@@ -1,3 +1,4 @@
+
 import random
 import sqlite3
 from datetime import date, timedelta
@@ -12,7 +13,7 @@ from src.schema import DB_PATH, create_database
 # ============================================================
 
 SEED = 20261022
-CUSTOMER_COUNT = 20000  
+CUSTOMER_COUNT = 20000
 CAMPAIGN_DATE = date(2026, 10, 1)
 HORIZON_END = date(2026, 12, 30)
 
@@ -93,7 +94,7 @@ def generate_customers(count=CUSTOMER_COUNT):
             random.choice(regions),
             random.choice(segments),
             random.choice(channels),
-            "2026-10-01",
+            CAMPAIGN_DATE.isoformat(),
         ))
 
     return customers
@@ -181,13 +182,7 @@ def generate_usage_snapshots(subscriptions):
             k=1,
         )[0]
 
-        current = date(
-            start_date.year,
-            start_date.month,
-            1,
-        )
-
-        # Only months before the campaign prediction date.
+        current = date(start_date.year, start_date.month, 1)
         final_month = date(2026, 9, 1)
 
         base_usage = random.randint(180, 400)
@@ -195,20 +190,15 @@ def generate_usage_snapshots(subscriptions):
 
         while current <= final_month:
             if behavior == "declining":
-                # A gradual decline in usage over time.
                 usage = base_usage * (0.90 ** month_number)
-
             elif behavior == "increasing":
                 usage = base_usage * (1.04 ** month_number)
-
             else:
                 usage = base_usage + random.randint(-20, 20)
 
-            # Add small noise to make the data less artificial.
             usage += random.randint(-8, 8)
             usage = max(10, min(500, int(usage)))
 
-            # Snapshot date must be before the prediction date.
             snapshot_day = random.randint(1, 28)
 
             snapshot_date = date(
@@ -218,8 +208,7 @@ def generate_usage_snapshots(subscriptions):
             )
 
             snapshots.append((
-                f"SNAP-{subscription_id}-"
-                f"{current.year}-{current.month:02d}",
+                f"SNAP-{subscription_id}-{current.year}-{current.month:02d}",
                 subscription_id,
                 snapshot_date.isoformat(),
                 usage,
@@ -268,14 +257,9 @@ def generate_billing_events(subscriptions):
         monthly_price = subscription[6]
         start_date = date.fromisoformat(subscription[4])
 
-        current = date(
-            start_date.year,
-            start_date.month,
-            1,
-        )
+        current = date(start_date.year, start_date.month, 1)
 
         while current <= CAMPAIGN_DATE:
-            # Generate the invoice.
             events.append((
                 f"BILL-{event_number:08d}",
                 subscription_id,
@@ -284,10 +268,8 @@ def generate_billing_events(subscriptions):
                 monthly_price,
                 "not_applicable",
             ))
-
             event_number += 1
 
-            # Payment outcomes are synthetic.
             payment_status = random.choices(
                 ["paid", "overdue", "failed"],
                 weights=[85, 10, 5],
@@ -304,7 +286,6 @@ def generate_billing_events(subscriptions):
                 monthly_price,
                 payment_status,
             ))
-
             event_number += 1
 
             if current.month == 12:
@@ -344,7 +325,6 @@ def generate_support_cases(customers):
     case_number = 1
 
     for customer in customers:
-        # Some customers have no support cases.
         if random.random() >= 0.40:
             continue
 
@@ -540,7 +520,6 @@ def calculate_customer_risk_scores(
 ):
     recent_start = CAMPAIGN_DATE - timedelta(days=90)
 
-    # Group usage snapshots by subscription.
     snapshots_by_subscription = {}
 
     for snapshot in usage_snapshots:
@@ -551,7 +530,6 @@ def calculate_customer_risk_scores(
                 snapshot[1], []
             ).append(snapshot)
 
-    # Group recent payments by subscription.
     billing_by_subscription = {}
 
     for event in billing_events:
@@ -565,7 +543,6 @@ def calculate_customer_risk_scores(
                 event[1], []
             ).append(event)
 
-    # Group recent support cases by customer.
     cases_by_customer = {}
 
     for case in support_cases:
@@ -601,10 +578,6 @@ def calculate_customer_risk_scores(
             key=lambda item: item[2],
         )
 
-        # ----------------------------------------------------
-        # Feature 1: Usage decline
-        # ----------------------------------------------------
-
         usage_decline = 0.0
 
         if len(history) >= 2:
@@ -616,15 +589,10 @@ def calculate_customer_risk_scores(
                     previous_usage - latest_usage
                 ) / previous_usage
 
-                # Scale a meaningful decline into the 0-1 range.
                 usage_decline = min(
                     raw_decline / 0.20,
                     1.0,
                 )
-
-        # ----------------------------------------------------
-        # Feature 2: Recent payment risk
-        # ----------------------------------------------------
 
         recent_payments = billing_by_subscription.get(
             subscription_id, []
@@ -639,13 +607,7 @@ def calculate_customer_risk_scores(
                 if event[5] in ("overdue", "failed")
             )
 
-            billing_risk = (
-                risky_payments / len(recent_payments)
-            )
-
-        # ----------------------------------------------------
-        # Feature 3: Recent support risk
-        # ----------------------------------------------------
+            billing_risk = risky_payments / len(recent_payments)
 
         support_risk = 0.0
 
@@ -657,10 +619,6 @@ def calculate_customer_risk_scores(
                 support_risk += 0.25
 
         support_risk = min(support_risk, 1.0)
-
-        # ----------------------------------------------------
-        # Final rule-based risk score
-        # ----------------------------------------------------
 
         score = (
             0.50 * usage_decline
@@ -697,7 +655,6 @@ def print_risk_distribution(customer_scores):
 # CAMPAIGN CONTACTS
 # ============================================================
 
-
 def generate_campaign_contacts(
     customers,
     subscriptions,
@@ -729,19 +686,16 @@ def generate_campaign_contacts(
 
     eligible_customers = []
 
-    # Step 1: Identify eligible customers and offers.
     for customer in customers:
         customer_id = customer[0]
-        subscription = subscriptions_by_customer.get(
-            customer_id
-        )
+
+        subscription = subscriptions_by_customer.get(customer_id)
 
         if subscription is None:
             continue
 
         risk_score = customer_scores[customer_id]
         monthly_price = subscription[6]
-
         eligible_offers = []
 
         for rule in rules:
@@ -779,7 +733,6 @@ def generate_campaign_contacts(
                 "eligible_offers": eligible_offers,
             })
 
-    # Step 2: Group customers into risk bands.
     risk_bands = {
         "low": [],
         "medium": [],
@@ -796,7 +749,6 @@ def generate_campaign_contacts(
         else:
             risk_bands["high"].append(item)
 
-    # Step 3: Randomize assignment within each risk band.
     contacts = []
     contact_number = 1
 
@@ -838,11 +790,9 @@ def generate_campaign_contacts(
 
             contact_number += 1
 
-    # Step 4: Shuffle the final contact list for output.
     random.shuffle(contacts)
 
     return contacts
-
 
 
 def save_campaign_contacts(contacts):
@@ -867,15 +817,12 @@ def save_campaign_contacts(contacts):
 # CHURN OUTCOMES
 # ============================================================
 
-
-
 def generate_churn_outcomes(
     subscriptions,
     contacts,
     customer_scores,
 ):
     outcomes = []
-    outcome_number = 1
 
     risk_by_subscription = {
         subscription[0]: customer_scores.get(
@@ -884,8 +831,6 @@ def generate_churn_outcomes(
         for subscription in subscriptions
     }
 
-    # Apply the simulated offer effect only when the offer
-    # was actually sent or delivered.
     treated_subscriptions = {
         contact[2]
         for contact in contacts
@@ -893,14 +838,14 @@ def generate_churn_outcomes(
         and contact[6] in ("sent", "delivered")
     }
 
-    for subscription in subscriptions:
+    for outcome_number, subscription in enumerate(
+        subscriptions, start=1
+    ):
         subscription_id = subscription[0]
-
         risk_score = risk_by_subscription.get(
             subscription_id, 0.0
         )
 
-        # Every generated subscription gets one outcome.
         if risk_score < 0.20:
             churn_probability = 0.05
         elif risk_score < 0.40:
@@ -910,6 +855,7 @@ def generate_churn_outcomes(
         else:
             churn_probability = 0.20
 
+        # This is an explicitly simulated treatment effect.
         if subscription_id in treated_subscriptions:
             churn_probability *= 0.70
 
@@ -943,10 +889,7 @@ def generate_churn_outcomes(
             ground_truth,
         ))
 
-        outcome_number += 1
-
     return outcomes
-
 
 
 def save_churn_outcomes(outcomes):
@@ -971,11 +914,27 @@ def save_churn_outcomes(outcomes):
 # ============================================================
 
 
+def generate_retention_outcomes(
+    contacts,
+    churn_outcomes,
+    subscriptions,
+):
+    """
+    Generate one retention outcome per campaign contact.
 
-def generate_retention_outcomes(contacts, churn_outcomes):
+    The incremental_revenue database column stores estimated
+    subscription revenue during the evaluation horizon.
+    It does not represent proven causal incremental revenue.
+    """
+
     churn_by_subscription = {
         outcome[1]: outcome
         for outcome in churn_outcomes
+    }
+
+    subscription_by_id = {
+        subscription[0]: subscription
+        for subscription in subscriptions
     }
 
     retention_outcomes = []
@@ -990,13 +949,23 @@ def generate_retention_outcomes(contacts, churn_outcomes):
             subscription_id
         )
 
-        # Do not silently treat a missing churn outcome
-        # as a retained customer.
         if churn_outcome is None:
             raise ValueError(
                 f"Missing churn outcome for subscription "
                 f"{subscription_id}"
             )
+
+        subscription = subscription_by_id.get(
+            subscription_id
+        )
+
+        if subscription is None:
+            raise ValueError(
+                f"Missing subscription record for "
+                f"{subscription_id}"
+            )
+
+        monthly_price = float(subscription[6])
 
         churn_date = (
             date.fromisoformat(churn_outcome[4])
@@ -1004,19 +973,40 @@ def generate_retention_outcomes(contacts, churn_outcomes):
             else None
         )
 
+        # Retained means no churn during the evaluation horizon.
         retained = int(
             churn_date is None
             or churn_date > HORIZON_END
         )
 
+        # Count offer costs only for treatment contacts
+        # whose offer was sent or delivered.
         offer_cost = (
             100.0
-            if experiment_group == "treatment"
-            and contact_status in ("sent", "delivered")
+            if (
+                experiment_group == "treatment"
+                and contact_status in ("sent", "delivered")
+            )
             else 0.0
         )
 
-        incremental_revenue = 0.0
+        # Estimate revenue from the campaign date until churn
+        # or the end of the evaluation horizon.
+        revenue_end_date = (
+            min(churn_date, HORIZON_END)
+            if churn_date is not None
+            else HORIZON_END
+        )
+
+        active_days = max(
+            0,
+            (revenue_end_date - CAMPAIGN_DATE).days,
+        )
+
+        estimated_revenue = round(
+            monthly_price * active_days / 30.0,
+            2,
+        )
 
         outcome_reason = (
             "retained" if retained else "churned"
@@ -1028,7 +1018,7 @@ def generate_retention_outcomes(contacts, churn_outcomes):
             HORIZON_END.isoformat(),
             retained,
             offer_cost,
-            incremental_revenue,
+            estimated_revenue,
             outcome_reason,
         ))
 
@@ -1096,41 +1086,31 @@ def print_experiment_groups(contacts):
     print("Control:", control_count)
 
 
-
 # ============================================================
 # MAIN
 # ============================================================
 
 def main():
-    # Step 1: Reset the database
     reset_database()
 
-    # Step 2: Generate and save customers
     customers = generate_customers(CUSTOMER_COUNT)
     save_customers(customers)
 
-    # Step 3: Generate and save subscriptions
     subscriptions = generate_subscriptions(customers)
     save_subscriptions(subscriptions)
 
-    # Step 4: Generate and save usage snapshots
     usage_snapshots = generate_usage_snapshots(subscriptions)
     save_usage_snapshots(usage_snapshots)
 
-    # Step 5: Generate and save billing events
     billing_events = generate_billing_events(subscriptions)
     save_billing_events(billing_events)
 
-    # Step 6: Generate and save support cases
     support_cases = generate_support_cases(customers)
     save_support_cases(support_cases)
 
-    # Step 7: Generate offers and eligibility rules
     offers, rules = generate_offers()
     save_offers_and_rules(offers, rules)
 
-    # Step 8: Generate and save campaign contacts
-    
     contacts = generate_campaign_contacts(
         customers,
         subscriptions,
@@ -1142,7 +1122,6 @@ def main():
     )
     save_campaign_contacts(contacts)
 
-    # Calculate risk scores for ALL customers.
     customer_scores = calculate_customer_risk_scores(
         customers,
         subscriptions,
@@ -1151,7 +1130,6 @@ def main():
         support_cases,
     )
 
-    # Generate churn outcomes using the full risk scores.
     churn_outcomes = generate_churn_outcomes(
         subscriptions,
         contacts,
@@ -1162,11 +1140,10 @@ def main():
     retention_outcomes = generate_retention_outcomes(
         contacts,
         churn_outcomes,
+        subscriptions,
     )
     save_retention_outcomes(retention_outcomes)
 
-
-    # Step 11: Print generation summary
     print("\nData generation completed.")
     print("Random seed:", SEED)
     print("Customers generated:", len(customers))

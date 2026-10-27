@@ -1,4 +1,3 @@
-
 import random
 import sqlite3
 from datetime import date, timedelta
@@ -16,6 +15,10 @@ SEED = 20261022
 CUSTOMER_COUNT = 20000
 CAMPAIGN_DATE = date(2026, 10, 1)
 HORIZON_END = date(2026, 12, 30)
+
+# New financial eligibility guardrails
+EVALUATION_MONTHS = 3
+MAX_OFFER_COST_REVENUE_RATIO = 0.30
 
 random.seed(SEED)
 np.random.seed(SEED)
@@ -714,10 +717,27 @@ def generate_campaign_contacts(
             offer_start = date.fromisoformat(offer[4])
             offer_end = date.fromisoformat(offer[5])
 
+            # New: estimate revenue during the evaluation horizon.
+            estimated_horizon_revenue = (
+                float(monthly_price) * EVALUATION_MONTHS
+            )
+
+            # New: set the maximum offer cost allowed by the revenue guardrail.
+            max_cost_for_revenue = (
+                estimated_horizon_revenue
+                * MAX_OFFER_COST_REVENUE_RATIO
+            )
+
+            # New: check offer cost against the revenue-based limit.
+            is_margin_safe = (
+                float(offer[3]) <= max_cost_for_revenue
+            )
+
             is_eligible = (
                 risk_score >= rule[2]
-                and offer[3] <= rule[3]
-                and monthly_price >= rule[4]
+                and float(offer[3]) <= rule[3]
+                and float(monthly_price) >= rule[4]
+                and is_margin_safe
                 and rule_start <= CAMPAIGN_DATE <= rule_end
                 and offer_start <= CAMPAIGN_DATE <= offer_end
             )
@@ -913,7 +933,6 @@ def save_churn_outcomes(outcomes):
 # RETENTION OUTCOMES
 # ============================================================
 
-
 def generate_retention_outcomes(
     contacts,
     churn_outcomes,
@@ -922,9 +941,8 @@ def generate_retention_outcomes(
     """
     Generate one retention outcome per campaign contact.
 
-    The incremental_revenue database column stores estimated
-    subscription revenue during the evaluation horizon.
-    It does not represent proven causal incremental revenue.
+    incremental_revenue stores estimated subscription revenue
+    during the evaluation horizon, not proven incremental revenue.
     """
 
     churn_by_subscription = {
@@ -937,17 +955,31 @@ def generate_retention_outcomes(
         for subscription in subscriptions
     }
 
+    # Use each selected offer's actual configured cost.
+    with sqlite3.connect(DB_PATH) as connection:
+        offer_rows = connection.execute("""
+            SELECT offer_id, offer_cost
+            FROM offers
+        """).fetchall()
+
+    offer_cost_by_id = {
+        offer_id: float(offer_cost)
+        for offer_id, offer_cost in offer_rows
+    }
+
     retention_outcomes = []
 
     for number, contact in enumerate(contacts, start=1):
         contact_id = contact[0]
         subscription_id = contact[2]
+        offer_id = contact[3]
         experiment_group = contact[5]
         contact_status = contact[6]
 
         churn_outcome = churn_by_subscription.get(
             subscription_id
         )
+        subscription = subscription_by_id.get(subscription_id)
 
         if churn_outcome is None:
             raise ValueError(
@@ -955,14 +987,15 @@ def generate_retention_outcomes(
                 f"{subscription_id}"
             )
 
-        subscription = subscription_by_id.get(
-            subscription_id
-        )
-
         if subscription is None:
             raise ValueError(
                 f"Missing subscription record for "
                 f"{subscription_id}"
+            )
+
+        if offer_id not in offer_cost_by_id:
+            raise ValueError(
+                f"Missing offer record for {offer_id}"
             )
 
         monthly_price = float(subscription[6])
@@ -973,16 +1006,13 @@ def generate_retention_outcomes(
             else None
         )
 
-        # Retained means no churn during the evaluation horizon.
         retained = int(
-            churn_date is None
-            or churn_date > HORIZON_END
+            churn_date is None or churn_date > HORIZON_END
         )
 
-        # Count offer costs only for treatment contacts
-        # whose offer was sent or delivered.
+        # Charge the configured cost of the actual selected offer.
         offer_cost = (
-            100.0
+            offer_cost_by_id[offer_id]
             if (
                 experiment_group == "treatment"
                 and contact_status in ("sent", "delivered")
@@ -990,8 +1020,6 @@ def generate_retention_outcomes(
             else 0.0
         )
 
-        # Estimate revenue from the campaign date until churn
-        # or the end of the evaluation horizon.
         revenue_end_date = (
             min(churn_date, HORIZON_END)
             if churn_date is not None
@@ -1023,7 +1051,6 @@ def generate_retention_outcomes(
         ))
 
     return retention_outcomes
-
 
 
 def save_retention_outcomes(outcomes):

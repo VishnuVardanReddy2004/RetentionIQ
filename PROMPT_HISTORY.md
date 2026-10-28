@@ -33,22 +33,30 @@ The following table summarizes the main categories of AI assistance used during 
 | 10 | Dashboard | Review how the Streamlit dashboard presents churn and campaign metrics | Launched the dashboard locally and inspected its output |
 | 11 | Documentation | Improve README structure, setup instructions, limitations, and verification details | Reviewed the README and checked the repository |
 | 12 | Final verification | Organize the submission checklist and AI-use documentation | Checked Git status, validation results, test results, and repository updates |
+## 4. Key AI Prompts
 
-## 4. Prompt Record
+**AI tool used:** ChatGPT
 
-The entries below are summaries of AI-assisted tasks, not a complete verbatim transcript. Exact prompts should be added from the original conversation history wherever available.
+The following entries capture the main AI-assisted tasks during RetentionIQ development. Telugu prompts are translated into English where applicable. Entries marked as task summaries are not verbatim prompts.
 
-| Date | AI tool | Prompt or task summary | Outcome and verification |
-|---|---|---|---|
-| October 2026 | ChatGPT | Help understand the RetentionIQ challenge and organize project implementation | Reviewed the project structure and requirements |
-| October 2026 | ChatGPT | Help review database design, data generation, and business rules | Checked database integrity and validation output |
-| October 2026 | ChatGPT | Help review churn-risk scoring and retention campaign logic | Inspected implementation and generated results |
-| October 2026 | ChatGPT | Help verify data quality and automated tests | Confirmed a development run with 41 passing validation checks and 22 passing pytest tests |
-| October 2026 | ChatGPT | Help verify reproducibility across independent data generations | Compared checksums from two independent runs |
-| October 2026 | ChatGPT | Help update the project README with verified results and limitations | Updated the README and pushed the changes to GitHub |
-| October 2026 | ChatGPT | Help document AI usage and prepare the final submission checklist | Created and committed this prompt-history document |
+| No. | Date | Key Prompt or Task | Outcome and Verification |
+|---:|---|---|---|
+| 1 | October 2026 | **Original prompt** Explain the challenge problem statement line by line and help me understand the requirements before starting implementation. | Clarified the project scope, business workflow, and expected deliverables. |
+| 2 | October 2026 | **Original prompt:** "Both VS Code and Python are installed. Start building RetentionIQ step by step." | Started the project setup and implementation. |
+| 3 | October 2026 | **Task summary:** Help design a relational database schema and generate reproducible synthetic data for customer churn and retention analytics. | Developed the SQLite data model and synthetic data-generation workflow. |
+| 4 | October 2026 | **Task summary:** Help implement churn-risk scoring, retention-offer eligibility, campaign costs, and treatment/control outcome tracking. | Developed the core business logic and campaign simulation. |
+| 5 | October 2026 | **Task summary:** Help implement data validation and automated tests for database integrity and business rules. | Latest recorded results: 41 validation checks passed and 22 pytest tests passed. |
+| 6 | October 2026 | **Task summary:** Help verify reproducibility by comparing independently generated datasets. | Development notes recorded matching database-content checksums from two independent runs. |
+| 7 | October 2026 | **Task summary:** Help build and refine the Streamlit dashboard to present churn risk, retention outcomes, and campaign metrics clearly. | Ran the dashboard locally and reviewed its rendered output. |
+| 8 | October 2026 | **Task summary:** Help prepare the README and final project documentation, including setup instructions, validation results, and limitations. | Updated project documentation and pushed changes to GitHub. |
 
-**Completeness note:** This table summarizes the tasks documented here. It does not establish that every prompt from every AI tool has been recovered. Additional prompts and tools must be recorded from the actual conversation history where available.
+### Prompt Record Limitations
+
+This is a concise record of the main AI-assisted tasks, not a complete transcript of every prompt. Original wording is included only where available. Task summaries must not be interpreted as verbatim prompts. Additional original prompts should be recovered where available to meet the challenge's prompt-disclosure requirements.
+
+### Human Review and Responsibility
+
+I am responsible for understanding the implementation, reviewing AI-assisted suggestions, verifying the project outputs, and explaining the design decisions and limitations during the technical review.
 
 ## 5. Verification Evidence
 

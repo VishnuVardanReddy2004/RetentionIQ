@@ -1,3 +1,15 @@
+
+# RetentionIQ – Customer Churn Intelligence & Retention Campaign Analytics
+
+🚀 **Live Demo:** https://retentioniq-dashboard.streamlit.app
+
+💻 **GitHub Repository:** https://github.com/VishnuVardanReddy2004/RetentionIQ
+
+
+
+Visit: https://retentioniq-dashboard.streamlit.app
+
+
 # RetentionIQ — Customer Churn & Retention Analytics
 
 RetentionIQ is a customer retention analytics project designed to identify customers at risk of churn, evaluate retention offer eligibility, and compare retention outcomes between treatment and control groups.

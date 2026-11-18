@@ -13,6 +13,14 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 from src.schema import DB_PATH
+# ---------------------------------------------------------
+# Initialize database for fresh deployments
+# ---------------------------------------------------------
+if not DB_PATH.exists():
+    with st.spinner("Initializing RetentionIQ database. Please wait..."):
+        from src.generate_data import main as generate_data
+
+        generate_data()
 
 
 # ---------------------------------------------------------
